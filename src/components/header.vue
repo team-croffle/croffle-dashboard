@@ -43,16 +43,17 @@
     </template>
 
     <template #right>
-      <div class="flex items-center gap-2 lg:mr-8">
-        <Link
+      <div class="flex items-center gap-4 lg:mr-8">
+        <ULink
           to="/"
           class="text-muted-foreground hover:text-foreground hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
         >
-          <Home class="h-4 w-4" />
+          <UIcon name="i-lucide-home" class="h-4 w-4" />
           메인 페이지로
-        </Link>
+        </ULink>
         <div class="bg-border mx-2 h-5 w-px" />
-        <button
+        <UButton
+          variant="ghost"
           class="hover:bg-accent flex items-center gap-3 rounded-lg px-3 py-1.5 transition-colors"
         >
           <span class="hidden text-sm font-medium sm:inline-block">
@@ -63,14 +64,15 @@
             :src="user!.profile.picture"
             :alt="user!.profile.name"
           />
-        </button>
-        <button
+        </UButton>
+        <UButton
           class="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md p-2 transition-colors"
           title="로그아웃"
+          variant="ghost"
           @click="handleLogout"
         >
           <UIcon name="i-lucide-log-out" class="h-4 w-4" />
-        </button>
+        </UButton>
         <UColorModeButton />
       </div>
     </template>
