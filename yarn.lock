@@ -115,6 +115,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@directus/sdk@npm:^21.3.0":
+  version: 21.3.0
+  resolution: "@directus/sdk@npm:21.3.0"
+  checksum: 10c0/85cbc2460a4517881b32c765ff5d6b17231fba4b3fd77d4b8509c4d0a213362f194d9c1434756dae00df32d8f181c23f0b98c971c444b7d1c7b26a21444d4bd0
+  languageName: node
+  linkType: hard
+
 "@emnapi/core@npm:1.10.0":
   version: 1.10.0
   resolution: "@emnapi/core@npm:1.10.0"
@@ -2721,6 +2728,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "croffle-dashboard@workspace:."
   dependencies:
+    "@directus/sdk": "npm:^21.3.0"
     "@iconify-vue/ic": "npm:^1.0.3"
     "@nuxt/ui": "npm:^4.8.1"
     "@tanstack/vue-query": "npm:^5.101.0"
@@ -2754,6 +2762,7 @@ __metadata:
     vue-eslint-parser: "npm:^10.4.1"
     vue-router: "npm:^5.1.0"
     vue-tsc: "npm:^3.2.8"
+    zod: "npm:^4.4.3"
   languageName: unknown
   linkType: soft
 
@@ -5982,5 +5991,12 @@ __metadata:
   version: 0.1.0
   resolution: "yocto-queue@npm:0.1.0"
   checksum: 10c0/dceb44c28578b31641e13695d200d34ec4ab3966a5729814d5445b194933c096b7ced71494ce53a0e8820685d1d010df8b2422e5bf2cdea7e469d97ffbea306f
+  languageName: node
+  linkType: hard
+
+"zod@npm:^4.4.3":
+  version: 4.4.3
+  resolution: "zod@npm:4.4.3"
+  checksum: 10c0/7ea31b558e88f9faf44f31dd185e2e1cbf51fed3081787fb96cc2534749b50c0acfc6da7f0922a7353ed092dd358c7d50c28ea96c94d04af64191bd33152eca3
   languageName: node
   linkType: hard
