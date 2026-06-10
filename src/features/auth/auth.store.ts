@@ -5,6 +5,7 @@ import { computed, ref } from 'vue';
 const OIDC_URL = import.meta.env.VITE_OIDC_URL;
 const OIDC_APP_SLUG = import.meta.env.VITE_OIDC_APP_SLUG;
 const OIDC_CLIENT_ID = import.meta.env.VITE_OIDC_CLIENT_ID;
+const HOMEPAGE_URL = import.meta.env.VITE_HOMEPAGE_URL;
 
 const userManager = new UserManager({
   authority: `${OIDC_URL}/application/o/${OIDC_APP_SLUG}`,
@@ -12,7 +13,7 @@ const userManager = new UserManager({
   redirect_uri: `${window.location.origin}/callback`,
   response_type: 'code',
   scope: 'openid profile email',
-  post_logout_redirect_uri: window.location.origin,
+  post_logout_redirect_uri: HOMEPAGE_URL,
   userStore: new WebStorageStateStore({ store: window.localStorage }),
 });
 
