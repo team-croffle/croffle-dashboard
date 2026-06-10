@@ -1,0 +1,4 @@
+@import './tailwind.css';
+@import './theme.css';
+@import './font.css';
+@import '@nuxt/ui';
