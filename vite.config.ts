@@ -6,21 +6,26 @@ import MotionResolver from 'motion-v/resolver';
 import { fileURLToPath, URL } from 'url';
 import { defineConfig } from 'vite';
 
-import { cloudflare } from "@cloudflare/vite-plugin";
+import { cloudflare } from '@cloudflare/vite-plugin';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [vue(), tailwindcss(), ui({
-    components: {
-      dts: true,
-      resolvers: [MotionResolver()],
-    },
-    ui: {
-      colors: {
-        neutral: 'neutral',
+  plugins: [
+    vue(),
+    tailwindcss(),
+    ui({
+      components: {
+        dts: true,
+        resolvers: [MotionResolver()],
       },
-    },
-  }), cloudflare()],
+      ui: {
+        colors: {
+          neutral: 'neutral',
+        },
+      },
+    }),
+    cloudflare(),
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

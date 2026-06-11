@@ -8,10 +8,14 @@
   const toolListStore = useToolListStore();
   const { toolList, isLoading, err } = storeToRefs(toolListStore);
   const { fetchToolList } = toolListStore;
-  const { profile, hasProfile } = useProfileStore();
+
+  const profileStore = useProfileStore();
+  const { profile } = storeToRefs(profileStore);
+  const { fetchProfile } = profileStore;
 
   onMounted(async () => {
     await fetchToolList();
+    await fetchProfile();
   });
 </script>
 
@@ -20,7 +24,7 @@
     <div class="flex w-full flex-row items-center justify-between">
       <div className="text-center sm:text-left">
         <h1 className="text-3xl font-bold tracking-tight mb-2">
-          {{ hasProfile ? `안녕하세요, ${profile!.name}님` : 'Team Tools' }}
+          {{ profile !== null ? `안녕하세요, ${profile!.name}님` : 'Team Tools' }}
         </h1>
         <p className="text-muted-foreground">
           Croffle Dev의 모든 업무 도구에 한 곳에서 접근하세요.
@@ -31,7 +35,7 @@
       </UButton>
     </div>
     <UAlert
-      v-if="!hasProfile"
+      v-if="!profile"
       title="프로필이 설정되지 않았습니다."
       description="메인 홈페이지에 게시될 프로필을 설정하세요"
       class="bg-primary/10 ring-0 outline-2 outline-dashed"

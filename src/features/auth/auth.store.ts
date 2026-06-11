@@ -33,7 +33,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function handleCallback() {
     try {
-      await directus.refresh();
       const me = await directus.request(readMe());
       user.value = me;
       window.history.replaceState({}, document.title, window.location.pathname);

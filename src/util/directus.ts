@@ -4,7 +4,7 @@ import { createDirectus, rest, authentication, readMe } from '@directus/sdk';
 const DIRECTUS_URL = import.meta.env.VITE_DIRECTUS_URL;
 
 export const directus = createDirectus(DIRECTUS_URL)
-  .with(authentication('session', { credentials: 'include' })) // session mode
+  .with(authentication('session', { credentials: 'include', autoRefresh: true })) // session mode
   .with(rest({ credentials: 'include' }));
 
 export async function getMe() {

@@ -19,7 +19,6 @@ export const useContactStore = defineStore('contact_submission', () => {
     err.value = null;
 
     try {
-      await directus.refresh();
       const resp = await directus.request(readItems(CONTACT_COLLECTION_NAME));
       console.log(resp);
       contactList.value = resp as Contact[];

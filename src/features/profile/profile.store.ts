@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import type { Profile, SaveProfileRequest } from './profile.type';
 import { directus } from '@/util/directus';
 import { createItem, readItems, updateItem } from '@directus/sdk';
@@ -11,15 +11,12 @@ export const useProfileStore = defineStore('profile', () => {
   const isLoading = ref<boolean>(false);
   const err = ref<string | null>(null);
 
-  const hasProfile = computed(() => profile.value !== null);
-
   async function fetchProfile() {
     isLoading.value = true;
     err.value = null;
 
     try {
-      await directus.refresh();
-      const resp = await directus.request(
+      const resp = await directus.request<Profile[]>(
         readItems(MEMBER_COLLECTION_NAME, {
           filter: { user_id: { _eq: '$CURRENT_USER' } },
           limit: 1,
@@ -61,7 +58,6 @@ export const useProfileStore = defineStore('profile', () => {
 
   return {
     profile,
-    hasProfile,
     isLoading,
     err,
     fetchProfile,

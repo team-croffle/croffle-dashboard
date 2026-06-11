@@ -16,7 +16,7 @@
   const toast = useToast();
 
   const profileStore = useProfileStore();
-  const { profile, hasProfile, err } = storeToRefs(profileStore);
+  const { profile, err } = storeToRefs(profileStore);
   const { fetchProfile, saveProfile } = profileStore;
 
   const schema = z.object({
@@ -86,9 +86,7 @@
   }
 
   onMounted(async () => {
-    if (hasProfile) {
-      await fetchProfile();
-    }
+    await fetchProfile();
   });
 
   watch(
