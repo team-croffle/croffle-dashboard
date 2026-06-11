@@ -2,12 +2,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore } from '@/features/auth/auth.store';
-import AuthCallbackView from '@/pages/auth-callback-view.vue';
-import DashboardView from '@/pages/dashboard-view.vue';
-import ErrorView from '@/pages/error-view.vue';
-import ProfileView from '@/pages/profile-view.vue';
 import { useProfileStore } from '@/features/profile/profile.store';
-import ContactView from '@/pages/contact-view.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -15,32 +10,32 @@ const router = createRouter({
     {
       path: '/',
       name: 'dashboard',
-      component: DashboardView,
+      component: () => import('@/pages/dashboard-view.vue'),
       meta: { requiresAuth: true, layout: 'default' },
     },
     {
       path: '/profile',
       name: 'profile',
-      component: ProfileView,
+      component: () => import('@/pages/profile-view.vue'),
       meta: { requiresAuth: true, layout: 'default' },
     },
     {
       path: '/contacts',
       name: 'contact-submissions',
-      component: ContactView,
+      component: () => import('@/pages/contact-view.vue'),
       meta: { requiresAuth: true, layout: 'default' },
     },
     {
       path: '/callback',
       name: 'callback',
-      component: AuthCallbackView,
+      component: () => import('@/pages/auth-callback-view.vue'),
       meta: { layout: 'none' },
     },
     {
-      path: '/error',
+      path: '/error/:statusCode',
       name: 'error',
-      component: ErrorView,
-      meta: { layout: 'default' },
+      component: () => import('@/pages/error-view.vue'),
+      meta: { layout: 'none' },
     },
   ],
 });
