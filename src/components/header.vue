@@ -1,12 +1,14 @@
 <script setup lang="ts">
   import type { DropdownMenuItem } from '@nuxt/ui/runtime/components/DropdownMenu.d.vue.js';
   import { computed, onMounted } from 'vue';
+  import { useRoute } from 'vue-router';
 
   import { useAuthStore } from '@/features/auth/auth.store';
   import { useProfileStore } from '@/features/profile/profile.store';
 
   const { logout, user } = useAuthStore();
   const { profile, hasProfile, fetchProfile } = useProfileStore();
+  const route = useRoute();
 
   const username = computed(() => {
     if (hasProfile) return profile?.nickname;
@@ -37,7 +39,7 @@
     {
       label: '로그아웃',
       icon: 'i-lucide-log-out',
-      click: handleLogout,
+      onSelect: handleLogout,
     },
   ];
 
@@ -81,7 +83,7 @@
           class="text-muted-foreground hover:text-foreground hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
         >
           <UIcon name="i-mdi:home" class="h-4 w-4" />
-          메인 페이지로
+          {{ '메인 페이지로' }}
         </ULink>
         <USeparator orientation="vertical" class="border-s-primary/20 h-6 border-s" />
         <UDropdownMenu :items="profileDropdownItems">

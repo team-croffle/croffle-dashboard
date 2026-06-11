@@ -24,6 +24,7 @@
       <p className="text-muted-foreground">Croffle Dev의 모든 업무 도구에 한 곳에서 접근하세요.</p>
     </div>
     <UAlert
+      v-if="!hasProfile"
       title="프로필이 설정되지 않았습니다."
       description="메인 홈페이지에 게시될 프로필을 설정하세요"
       class="bg-primary/10 ring-0 outline-2 outline-dashed"

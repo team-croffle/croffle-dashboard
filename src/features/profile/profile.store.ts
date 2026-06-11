@@ -18,7 +18,7 @@ export const useProfileStore = defineStore('profile', () => {
     err.value = null;
 
     try {
-      directus.refresh();
+      await directus.refresh();
       const resp = await directus.request(
         readItems(MEMBER_COLLECTION_NAME, {
           filter: { user_id: { _eq: '$CURRENT_USER' } },

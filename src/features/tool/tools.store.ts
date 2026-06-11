@@ -16,7 +16,7 @@ export const useToolListStore = defineStore('tool-list', () => {
     err.value = null;
 
     try {
-      directus.refresh();
+      await directus.refresh();
       const resp = await directus.request<Tool[]>(readItems(TOOL_COLLECTION_NAME));
       if (resp.length === 0) {
         err.value = '등록된 툴이 없습니다.';

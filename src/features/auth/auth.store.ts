@@ -16,7 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function initAuth() {
     try {
-      directus.refresh();
+      await directus.refresh();
       const me = await directus.request(readMe());
       user.value = me;
     } catch (err) {
@@ -33,7 +33,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function handleCallback() {
     try {
-      directus.refresh();
+      await directus.refresh();
       const me = await directus.request(readMe());
       user.value = me;
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -47,6 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
       await directus.logout();
     } finally {
       user.value = null;
+      window.location.href = 'https://croffledev.kr';
     }
   }
 
