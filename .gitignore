@@ -32,3 +32,9 @@ dist-ssr
 .env.*
 
 *.pem
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
