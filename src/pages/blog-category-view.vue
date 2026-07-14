@@ -119,7 +119,7 @@
           color="neutral"
           size="lg"
           icon="i-lucide-chevron-left"
-          :to="{ name: 'blog-posts', params: { blogSlug } }"
+          :to="{ name: 'blog-home' }"
         />
         <h2>카테고리 관리</h2>
       </template>
