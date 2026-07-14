@@ -4,7 +4,12 @@
   import { StarterKit } from '@tiptap/starter-kit';
   import { useEditor, EditorContent } from '@tiptap/vue-3';
   import { useColorMode } from '@vueuse/core';
-  import { MdEditor, type UploadImgCallBackParam } from 'md-editor-v3';
+  import {
+    DropdownToolbar,
+    MdEditor,
+    type ExposeParam,
+    type UploadImgCallBackParam,
+  } from 'md-editor-v3';
   import 'md-editor-v3/lib/style.css';
   import { storeToRefs } from 'pinia';
   import { Markdown } from 'tiptap-markdown';
@@ -97,10 +102,6 @@
     if (mode === 'wysiwyg' && editor.value) {
       editor.value.commands.setContent(content.value);
     }
-  });
-
-  watch(content, (content) => {
-    console.log('content changed', JSON.stringify(content, null, 2));
   });
 
   onBeforeUnmount(() => {
@@ -289,6 +290,18 @@
   }
 
   const flatCategories = computed(() => flattenCategories(categoryStore.categoryTree));
+
+  const mdEditorRef = ref<ExposeParam>();
+  const gridDropdownVisible = ref<boolean>(false);
+
+  function insertImgGrid(columns: 2 | 3) {
+    mdEditorRef.value?.insert((selectedText) => ({
+      targetValue: `::prose-img-grid{columns="${columns}"}\n${selectedText || Array(columns).fill('![]()').join('\n')}\n::`,
+      select: true,
+      deviationStart: -3,
+      deviationEnd: 0,
+    }));
+  }
 </script>
 
 <template>
@@ -387,6 +400,7 @@
         <!-- md-editor-v3 -->
         <MdEditor
           v-show="editorMode === 'markdown'"
+          ref="mdEditorRef"
           v-model="content"
           :theme="colorMode === 'dark' ? 'dark' : 'light'"
           class="flex-1"
@@ -409,6 +423,7 @@
             'code',
             'link',
             'image',
+            0,
             'table',
             '-',
             'revoke',
@@ -418,7 +433,29 @@
             'fullscreen',
           ]"
           @upload-img="handleUploadImage"
-        />
+        >
+          <template #defToolbars>
+            <DropdownToolbar
+              title="Image Grid"
+              :visible="gridDropdownVisible"
+              @on-change="gridDropdownVisible = $event"
+            >
+              <template #trigger>
+                <UIcon name="i-lucide-grid" />
+              </template>
+              <template #overlay>
+                <div class="border-default flex flex-col rounded-md border">
+                  <UButton variant="ghost" color="neutral" size="md" @click="insertImgGrid(2)">
+                    {{ '2 columns' }}
+                  </UButton>
+                  <UButton variant="ghost" color="neutral" size="md" @click="insertImgGrid(3)">
+                    {{ '3 columns' }}
+                  </UButton>
+                </div>
+              </template>
+            </DropdownToolbar>
+          </template>
+        </MdEditor>
       </div>
 
       <!-- Sidebar -->
