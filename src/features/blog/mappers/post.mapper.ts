@@ -30,6 +30,7 @@ export function mapPostListItem(raw: DirectusPost): PostListItem {
   return {
     id: raw.id,
     blogId: raw.blog_id,
+    postIdx: raw.post_idx,
     title: raw.title,
     slug: raw.slug,
     status: raw.status,

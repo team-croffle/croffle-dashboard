@@ -44,7 +44,7 @@ const router = createRouter({
       meta: { requiresAuth: true, layout: 'default', requiresBlogMembership: true },
     },
     {
-      path: '/blog/:blogSlug/posts/:postSlug/edit',
+      path: '/blog/:blogSlug/posts/:postIdx/edit',
       name: 'blog-post-edit',
       component: () => import('@/pages/blog-post-editor-view.vue'),
       meta: { requiresAuth: true, layout: 'default', requiresBlogMembership: true },

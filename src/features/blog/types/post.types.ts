@@ -28,6 +28,7 @@ export interface Post {
 export interface PostListItem {
   id: string;
   blogId: string;
+  postIdx: number;
   title: string;
   slug: string;
   status: PostStatus;
