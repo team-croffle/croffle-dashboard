@@ -25,7 +25,6 @@ export interface DirectusPost {
   thumbnail: string | null;
   status: 'draft' | 'published' | 'archived';
   visibility: 'public' | 'private' | 'protected';
-  password: string | null;
   password_hash: string;
   published_at: string | null;
   created_at: string;
@@ -42,7 +41,7 @@ export interface DirectusPostSavePayload {
   status: 'draft' | 'published' | 'archived';
   visibility: 'public' | 'private' | 'protected';
   thumbnail?: string | null;
-  password?: string | null;
+  password_hash?: string | null;
   categories?: Array<{ categories_id: string }>;
   tags?: Array<{ tags_id: string }>;
   series?: Array<{ series_id: string }>;

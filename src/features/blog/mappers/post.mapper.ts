@@ -48,7 +48,7 @@ export function mapPostToPayload(req: PostSaveRequest): DirectusPostSavePayload 
     status: req.status,
     visibility: req.visibility,
     thumbnail: req.thumbnail,
-    password: req.password ?? null,
+    password_hash: req.passwordHash ?? null,
     categories: req.categories,
     tags: req.tags,
     series: req.series,
