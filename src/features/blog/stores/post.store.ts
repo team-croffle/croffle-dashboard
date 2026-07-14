@@ -12,7 +12,9 @@ const POSTS_COLLECTION = import.meta.env.VITE_BLOG_COLLECTION_NAME as string;
 const POST_LIST_FIELDS = [
   'id',
   'blog_id',
+  'author_id',
   'title',
+  'post_idx',
   'slug',
   'status',
   'visibility',
@@ -55,14 +57,14 @@ export const usePostStore = defineStore('blog_post', () => {
     }
   }
 
-  async function fetchPost(slug: string) {
+  async function fetchPost(postIdx: number) {
     isLoading.value = true;
     err.value = null;
     currentPost.value = null;
     try {
       const resp = await directus.request<DirectusPost[]>(
         readItems(POSTS_COLLECTION, {
-          filter: { slug: { _eq: slug } },
+          filter: { post_idx: { _eq: postIdx } },
           fields: [...POST_DETAIL_FIELDS],
           limit: 1,
         }),
