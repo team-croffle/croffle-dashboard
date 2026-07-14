@@ -99,13 +99,20 @@ export const usePostStore = defineStore('blog_post', () => {
     err.value = null;
     try {
       const payload = { ...mapPostToPayload(req), blog_id: blogId };
-      const resp = await directus.request<DirectusPost>(createItem(POSTS_COLLECTION, payload));
+      const resp = await directus.request<DirectusPost>(
+        createItem(POSTS_COLLECTION, payload, {
+          fields: [...POST_DETAIL_FIELDS],
+        }),
+      );
       const created = mapPost(resp);
       currentPost.value = created;
 
+      posts.value.unshift(created);
+
       setIsSaved(true);
       return created;
-    } catch {
+    } catch (error) {
+      console.error('createPost error', error);
       err.value = '글 저장에 실패했습니다.';
       return null;
     } finally {
@@ -133,7 +140,8 @@ export const usePostStore = defineStore('blog_post', () => {
 
       setIsSaved(true);
       return updated;
-    } catch {
+    } catch (error) {
+      console.error('updatePost error', error);
       err.value = '글 수정에 실패했습니다.';
       return null;
     } finally {

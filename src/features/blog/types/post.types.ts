@@ -44,7 +44,7 @@ export interface PostSaveRequest {
   status: PostStatus;
   visibility: PostVisibility;
   thumbnail?: string | null;
-  password?: string | null;
+  passwordHash?: string | null;
   categories?: Array<{ categories_id: string }>;
   tags?: Array<{ tags_id: string }>;
   series?: Array<{ series_id: string }>;

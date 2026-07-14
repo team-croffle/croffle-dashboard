@@ -59,7 +59,7 @@
   const currentStatus = ref<PostStatus>('draft');
   const status = ref<PostStatus>('draft');
   const visibility = ref<PostVisibility>('public');
-  const password = ref('');
+  const passwordHash = ref('');
   const thumbnailId = ref<string | null>(null);
   const thumbnailPreview = ref<string | null>(null);
   const selectedCategories = ref<string[]>([]);
@@ -202,7 +202,7 @@
       status: overrideStatus ?? status.value,
       visibility: visibility.value,
       thumbnail: thumbnailId.value,
-      password: visibility.value === 'protected' ? password.value || null : null,
+      passwordHash: visibility.value === 'protected' ? passwordHash.value : null,
       categories: selectedCategories.value.map((id) => ({ categories_id: id })),
       tags: selectedTags.value.map((t) => ({ tags_id: t.id })),
       series: selectedSeries.value ? [{ series_id: selectedSeries.value.id }] : [],
@@ -212,7 +212,6 @@
   async function save(overrideStatus?: PostStatus) {
     if (!title.value.trim() || !currentBlog.value) return;
     const payload = buildPayload(overrideStatus);
-    console.log('payload', JSON.stringify(payload, null, 2));
 
     if (isEditMode.value && currentPost.value) {
       await postStore.updatePost(currentPost.value.id, payload);
@@ -233,10 +232,8 @@
 
   async function publish() {
     if (currentStatus.value === 'published') {
-      console.log('current status is published', currentStatus.value);
       await save();
     } else {
-      console.log('current status is not published', currentStatus.value);
       await save('published');
     }
   }
@@ -349,15 +346,7 @@
             :color="isSaved ? 'success' : 'primary'"
             @click="publish"
           >
-            {{
-              currentStatus === 'published'
-                ? isSaved
-                  ? '수정 완료'
-                  : '수정'
-                : isSaved
-                  ? '발행 완료'
-                  : '발행'
-            }}
+            {{ isSaved ? '발행 완료' : '발행' }}
           </UButton>
         </div>
       </div>
@@ -461,7 +450,7 @@
       <!-- Sidebar -->
       <aside class="border-default bg-default w-80 shrink-0 space-y-5 overflow-y-auto border-l p-4">
         <!-- Status -->
-        <div class="flex gap-2">
+        <div class="flex items-center gap-2">
           <label class="text-base font-medium tracking-wide opacity-60">상태</label>
           <USelect
             v-model="status"
@@ -477,25 +466,29 @@
         </div>
 
         <!-- Visibility -->
-        <div class="flex gap-2">
-          <label class="text-base font-medium tracking-wide uppercase opacity-60">공개 범위</label>
-          <USelect
-            v-model="visibility"
-            :items="[
-              { label: '공개', value: 'public' },
-              { label: '비공개', value: 'private' },
-              { label: '비밀번호 보호', value: 'protected' },
-            ]"
-            value-key="value"
-            label-key="label"
-            size="md"
-          />
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center gap-2">
+            <label class="text-base font-medium tracking-wide opacity-60">
+              {{ '공개 범위' }}
+            </label>
+            <USelect
+              v-model="visibility"
+              :items="[
+                { label: '공개', value: 'public' },
+                { label: '비공개', value: 'private' },
+                { label: '보호글 개발중' },
+              ]"
+              value-key="value"
+              label-key="label"
+              size="md"
+            />
+          </div>
           <UInput
             v-if="visibility === 'protected'"
-            v-model="password"
+            v-model="passwordHash"
             type="password"
             placeholder="비밀번호 입력"
-            size="sm"
+            size="md"
           />
         </div>
 
