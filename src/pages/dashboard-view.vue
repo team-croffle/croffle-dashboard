@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { useColorMode } from '@vueuse/core';
   import { storeToRefs } from 'pinia';
   import { onMounted } from 'vue';
 
@@ -6,10 +7,19 @@
   import { useToolListStore } from '@/features/tool/tools.store';
 
   const toolListStore = useToolListStore();
+  const colorMode = useColorMode();
   const { toolList, isLoading, err } = storeToRefs(toolListStore);
   const { fetchToolList } = toolListStore;
 
   const { profile } = storeToRefs(useProfileStore());
+
+  function getIconColor(color: string) {
+    // light mode, color는 white일 경우 반전 색상을 사용
+    if (colorMode.value === 'light' && color === 'white') {
+      return `var(--color-black)`;
+    }
+    return `var(--color-${color})`;
+  }
 
   onMounted(async () => {
     await fetchToolList();
@@ -56,6 +66,7 @@
     <!-- HACK: tailwind의 동적 색상 적용을 위해 미리 정의 -->
     <div class="hidden">
       <div class="bg-white" />
+      <div class="bg-black" />
       <div class="bg-rose-400" />
       <div class="bg-emerald-400" />
       <div class="bg-cyan-400" />
@@ -90,7 +101,7 @@
                 <UIcon
                   :name="tool.icon_name"
                   class="size-7 rounded-2xl"
-                  :style="{ color: `var(--color-${tool.color})` }"
+                  :style="{ color: getIconColor(tool.color) }"
                 />
               </div>
               <UIcon
