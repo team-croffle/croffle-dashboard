@@ -84,6 +84,13 @@
           <UIcon name="i-mdi:home" class="h-4 w-4" />
           {{ '메인 페이지로' }}
         </ULink>
+        <ULink
+          to="/blog"
+          class="text-muted-foreground hover:text-foreground hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+        >
+          <UIcon name="i-lucide-pencil-line" class="h-4 w-4" />
+          블로그
+        </ULink>
         <USeparator orientation="vertical" class="border-s-primary/20 h-6 border-s" />
         <UDropdownMenu :items="profileDropdownItems">
           <UButton

@@ -2,6 +2,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore } from '@/features/auth/auth.store';
+import { useBlogStore } from '@/features/blog/stores/blog.store';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -23,6 +24,36 @@ const router = createRouter({
       name: 'contact-submissions',
       component: () => import('@/pages/contact-view.vue'),
       meta: { requiresAuth: true, layout: 'default' },
+    },
+    {
+      path: '/blog',
+      name: 'blog-home',
+      component: () => import('@/pages/blog-home-view.vue'),
+      meta: { requiresAuth: true, layout: 'default' },
+    },
+    {
+      path: '/blog/:blogSlug',
+      name: 'blog-posts',
+      component: () => import('@/pages/blog-post-list-view.vue'),
+      meta: { requiresAuth: true, layout: 'default', requiresBlogMembership: true },
+    },
+    {
+      path: '/blog/:blogSlug/posts/new',
+      name: 'blog-post-new',
+      component: () => import('@/pages/blog-post-editor-view.vue'),
+      meta: { requiresAuth: true, layout: 'default', requiresBlogMembership: true },
+    },
+    {
+      path: '/blog/:blogSlug/posts/:postSlug/edit',
+      name: 'blog-post-edit',
+      component: () => import('@/pages/blog-post-editor-view.vue'),
+      meta: { requiresAuth: true, layout: 'default', requiresBlogMembership: true },
+    },
+    {
+      path: '/blog/:blogSlug/categories',
+      name: 'blog-categories',
+      component: () => import('@/pages/blog-category-view.vue'),
+      meta: { requiresAuth: true, layout: 'default', requiresBlogMembership: true },
     },
     {
       path: '/callback',
@@ -51,6 +82,14 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth && !isLoggedIn) {
     login();
     return false;
+  }
+
+  if (to.meta.requiresBlogMembership && to.params.blogSlug) {
+    const blogStore = useBlogStore();
+    await blogStore.fetchMyBlogs();
+    if (!blogStore.getBlogBySlug(to.params.blogSlug as string)) {
+      return { name: 'error', params: { statusCode: '403' } };
+    }
   }
 });
 
