@@ -94,3 +94,19 @@ export interface DirectusSeriesSavePayload {
   description?: string;
   thumbnail?: string | null;
 }
+
+export interface DirectusUploadFileResponse {
+  id: string;
+  filename_download: string;
+  title: string;
+  type: string;
+  folder: string;
+  folder_id: string;
+  created_at: string;
+  updated_at: string;
+  storage: string;
+  metadata: {
+    size: number;
+    mime_type: string;
+  };
+}
