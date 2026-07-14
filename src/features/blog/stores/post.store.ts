@@ -1,13 +1,21 @@
 import { directus } from '@/util/directus';
-import { createItem, readItems, updateItem, uploadFiles } from '@directus/sdk';
+import {
+  createFolder,
+  createItem,
+  readFolders,
+  readItems,
+  updateItem,
+  uploadFiles,
+} from '@directus/sdk';
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, toRaw } from 'vue';
 
 import { mapPost, mapPostListItem, mapPostToPayload } from '../mappers/post.mapper';
-import type { DirectusPost } from '../types/directus.types';
+import type { DirectusPost, DirectusUploadFileResponse } from '../types/directus.types';
 import type { Post, PostListItem, PostSaveRequest } from '../types/post.types';
 
 const POSTS_COLLECTION = import.meta.env.VITE_BLOG_COLLECTION_NAME as string;
+// const DIRECTUS_URL = import.meta.env.VITE_DIRECTUS_URL;
 
 const POST_LIST_FIELDS = [
   'id',
@@ -36,7 +44,16 @@ export const usePostStore = defineStore('blog_post', () => {
   const isLoading = ref(false);
   const isSaving = ref(false);
   const isUploading = ref(false);
+  const isSaved = ref(false);
   const err = ref<string | null>(null);
+
+  function setIsSaved(value: boolean) {
+    isSaved.value = value;
+    // 3초 후에 isSaved를 false로 설정
+    setTimeout(() => {
+      isSaved.value = false;
+    }, 3000);
+  }
 
   async function fetchPosts(blogId: string) {
     isLoading.value = true;
@@ -57,14 +74,14 @@ export const usePostStore = defineStore('blog_post', () => {
     }
   }
 
-  async function fetchPost(postIdx: number) {
+  async function fetchPost(blogId: string, postIdx: number) {
     isLoading.value = true;
     err.value = null;
     currentPost.value = null;
     try {
       const resp = await directus.request<DirectusPost[]>(
         readItems(POSTS_COLLECTION, {
-          filter: { post_idx: { _eq: postIdx } },
+          filter: { blog_id: { _eq: blogId }, post_idx: { _eq: postIdx } },
           fields: [...POST_DETAIL_FIELDS],
           limit: 1,
         }),
@@ -85,6 +102,8 @@ export const usePostStore = defineStore('blog_post', () => {
       const resp = await directus.request<DirectusPost>(createItem(POSTS_COLLECTION, payload));
       const created = mapPost(resp);
       currentPost.value = created;
+
+      setIsSaved(true);
       return created;
     } catch {
       err.value = '글 저장에 실패했습니다.';
@@ -97,14 +116,22 @@ export const usePostStore = defineStore('blog_post', () => {
   async function updatePost(postId: string, req: PostSaveRequest): Promise<Post | null> {
     isSaving.value = true;
     err.value = null;
+
     try {
       const resp = await directus.request<DirectusPost>(
-        updateItem(POSTS_COLLECTION, postId, mapPostToPayload(req)),
+        updateItem(POSTS_COLLECTION, postId, mapPostToPayload(req), {
+          fields: [...POST_DETAIL_FIELDS],
+        }),
       );
+
       const updated = mapPost(resp);
       currentPost.value = updated;
       const idx = posts.value.findIndex((p) => p.id === postId);
-      if (idx !== -1) posts.value[idx] = mapPostListItem(resp);
+      if (idx !== -1) {
+        posts.value[idx] = mapPostListItem(resp);
+      }
+
+      setIsSaved(true);
       return updated;
     } catch {
       err.value = '글 수정에 실패했습니다.';
@@ -114,14 +141,33 @@ export const usePostStore = defineStore('blog_post', () => {
     }
   }
 
-  async function uploadThumbnail(file: File): Promise<string | null> {
+  async function getOrCreateFolder(blogSlug: string): Promise<string | null> {
+    const existing = await directus.request(readFolders({ filter: { name: { _eq: blogSlug } } }));
+    if (existing[0]) {
+      return existing[0].id;
+    }
+
+    const created = await directus.request(createFolder({ name: blogSlug }));
+    return (created as { id: string }).id;
+  }
+
+  async function uploadThumbnail(file: File, blogSlug: string): Promise<string | null> {
     isUploading.value = true;
     err.value = null;
+
     try {
+      const folderId = await getOrCreateFolder(blogSlug);
+      if (!folderId) {
+        err.value = '폴더를 생성하는데 실패했습니다.';
+        return null;
+      }
+
       const formData = new FormData();
-      formData.append('file', file);
-      const resp = await directus.request(uploadFiles(formData));
-      return (resp as { id: string }).id ?? null;
+      formData.append('folder', folderId);
+      formData.append('file', toRaw(file));
+
+      const resp = await directus.request<DirectusUploadFileResponse>(uploadFiles(formData));
+      return resp.id ?? null;
     } catch {
       err.value = '썸네일 업로드에 실패했습니다.';
       return null;
@@ -140,6 +186,7 @@ export const usePostStore = defineStore('blog_post', () => {
     isLoading,
     isSaving,
     isUploading,
+    isSaved,
     err,
     fetchPosts,
     fetchPost,
