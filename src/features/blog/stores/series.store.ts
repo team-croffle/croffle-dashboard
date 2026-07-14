@@ -22,6 +22,7 @@ export const useSeriesStore = defineStore('blog_series', () => {
         readItems(SERIES_COLLECTION, {
           filter: { blog_id: { _eq: blogId } },
           sort: ['name'],
+          _ts: Date.now(),
         }),
       );
       seriesList.value = resp.map(mapSeries);

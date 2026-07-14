@@ -22,6 +22,7 @@ export const useTagStore = defineStore('blog_tag', () => {
         readItems(TAGS_COLLECTION, {
           filter: { blog_id: { _eq: blogId } },
           sort: ['name'],
+          _ts: Date.now(),
         }),
       );
       tags.value = resp.map(mapTag);

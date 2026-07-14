@@ -53,10 +53,12 @@
 
   // --- Edit ---
   const editingId = ref<string | null>(null);
+  const selectedCategory = ref<Category | null>(null);
   const editForm = ref<Partial<CategorySaveRequest>>({});
 
   function startEdit(cat: Category) {
     editingId.value = cat.id;
+    selectedCategory.value = cat;
     editForm.value = {
       name: cat.name,
       icon: cat.icon ?? '',
@@ -65,8 +67,17 @@
     };
   }
 
+  function buildEditPayload(data: Partial<CategorySaveRequest>): Partial<CategorySaveRequest> {
+    return {
+      name: data.name !== selectedCategory.value?.name ? data.name : undefined,
+      icon: data.icon !== selectedCategory.value?.icon ? data.icon : undefined,
+      parentId: data.parentId !== selectedCategory.value?.parentId ? data.parentId : undefined,
+      sortOrder: data.sortOrder !== selectedCategory.value?.sortOrder ? data.sortOrder : undefined,
+    };
+  }
+
   async function submitEdit(id: string) {
-    const ok = await updateCategory(id, editForm.value);
+    const ok = await updateCategory(id, buildEditPayload(editForm.value));
     if (ok) editingId.value = null;
   }
 
