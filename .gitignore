@@ -38,3 +38,6 @@ dist-ssr
 .dev.vars*
 !.dev.vars.example
 !.env.example
+
+# AI Context and Prompt files
+.ai/*
