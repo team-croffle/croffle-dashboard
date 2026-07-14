@@ -14,6 +14,9 @@ const promisePlugin = /** @type {any} */ (pluginPromise);
  */
 const vueConfig = [
   {
+    ignores: ['dist', 'node_modules'],
+  },
+  {
     languageOptions: {
       parser: tsParser,
     },
