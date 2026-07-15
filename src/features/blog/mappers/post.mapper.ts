@@ -41,16 +41,16 @@ export function mapPostListItem(raw: DirectusPost): PostListItem {
   };
 }
 
-export function mapPostToPayload(req: PostSaveRequest): DirectusPostSavePayload {
-  return {
-    title: req.title,
-    content: req.content,
-    status: req.status,
-    visibility: req.visibility,
-    thumbnail: req.thumbnail,
-    password_hash: req.passwordHash ?? null,
-    categories: req.categories,
-    tags: req.tags,
-    series: req.series,
-  };
+export function mapPostToPayload(req: Partial<PostSaveRequest>): Partial<DirectusPostSavePayload> {
+  const payload: Partial<DirectusPostSavePayload> = {};
+  if (req.title !== undefined) payload.title = req.title;
+  if (req.content !== undefined) payload.content = req.content;
+  if (req.status !== undefined) payload.status = req.status;
+  if (req.visibility !== undefined) payload.visibility = req.visibility;
+  if (req.thumbnail !== undefined) payload.thumbnail = req.thumbnail;
+  if (req.passwordHash !== undefined) payload.password_hash = req.passwordHash;
+  if (req.categories !== undefined) payload.categories = req.categories;
+  if (req.tags !== undefined) payload.tags = req.tags;
+  if (req.series !== undefined) payload.series = req.series;
+  return payload;
 }

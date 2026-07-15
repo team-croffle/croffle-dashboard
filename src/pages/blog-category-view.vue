@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { storeToRefs } from 'pinia';
-  import { computed, onMounted, ref } from 'vue';
+  import { computed, ref, watch } from 'vue';
   import { useRoute } from 'vue-router';
 
   import { useBlogStore } from '@/features/blog/stores/blog.store';
@@ -18,11 +18,15 @@
   const { categories, categoryTree, isLoading, isSaving, err } = storeToRefs(categoryStore);
   const { fetchCategories, createCategory, updateCategory, deleteCategory } = categoryStore;
 
-  onMounted(async () => {
-    if (currentBlog.value) {
-      await fetchCategories(currentBlog.value.id);
-    }
-  });
+  watch(
+    blogSlug,
+    async () => {
+      if (currentBlog.value) {
+        await fetchCategories(currentBlog.value.id);
+      }
+    },
+    { immediate: true },
+  );
 
   // --- New category form ---
   const newForm = ref<CategorySaveRequest>({
@@ -77,6 +81,11 @@
   }
 
   async function submitEdit(id: string) {
+    const banned = new Set([id, ...collectDescendantIds(id, categories.value)]);
+    if (editForm.value.parentId && banned.has(editForm.value.parentId)) {
+      return;
+    }
+
     const ok = await updateCategory(id, buildEditPayload(editForm.value));
     if (ok) editingId.value = null;
   }
@@ -94,13 +103,41 @@
     deletingId.value = null;
   }
 
+  function collectDescendantIds(catId: string, cats: Category[]): Set<string> {
+    const byParent = new Map<string | null, Category[]>();
+    for (const c of cats) {
+      const list = byParent.get(c.parentId) ?? [];
+      list.push(c);
+      byParent.set(c.parentId, list);
+    }
+
+    const out = new Set<string>();
+    const stack = [catId];
+    while (stack.length) {
+      const id = stack.pop()!;
+      for (const child of byParent.get(id) ?? []) {
+        if (!out.has(child.id)) {
+          out.add(child.id);
+          stack.push(child.id);
+        }
+      }
+    }
+    return out;
+  }
+
   // --- Category select options (for parent select) ---
-  const parentOptions = computed(() => [
-    { id: null, label: '(최상위)' },
-    ...categories.value
-      .filter((c) => c.id !== editingId.value)
-      .map((c) => ({ id: c.id, label: c.name })),
-  ]);
+  const parentOptions = computed(() => {
+    const banned = editingId.value
+      ? new Set([editingId.value, ...collectDescendantIds(editingId.value, categories.value)])
+      : new Set<string>();
+
+    return [
+      { id: null, label: '(최상위)' },
+      ...categories.value
+        .filter((c) => !banned.has(c.id))
+        .map((c) => ({ id: c.id, label: c.name })),
+    ];
+  });
 
   // --- Tree rendering ---
   function flattenTree(cats: Category[], depth = 0): Array<Category & { depth: number }> {

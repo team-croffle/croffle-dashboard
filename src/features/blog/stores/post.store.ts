@@ -95,7 +95,7 @@ export const usePostStore = defineStore('blog_post', () => {
     }
   }
 
-  async function createPost(blogId: string, req: PostSaveRequest): Promise<Post | null> {
+  async function createPost(blogId: string, req: Partial<PostSaveRequest>): Promise<Post | null> {
     isSaving.value = true;
     err.value = null;
     try {
@@ -121,7 +121,7 @@ export const usePostStore = defineStore('blog_post', () => {
     }
   }
 
-  async function updatePost(postId: string, req: PostSaveRequest): Promise<Post | null> {
+  async function updatePost(postId: string, req: Partial<PostSaveRequest>): Promise<Post | null> {
     isSaving.value = true;
     err.value = null;
 

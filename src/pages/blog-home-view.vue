@@ -35,8 +35,8 @@
   }
 
   async function saveDescription(blog: Blog) {
-    await updateBlogDescription(blog.id, descriptionDraft.value);
-    editingDescriptionId.value = null;
+    const ok = await updateBlogDescription(blog.id, descriptionDraft.value);
+    if (ok) editingDescriptionId.value = null;
   }
 
   function cancelEditDescription() {

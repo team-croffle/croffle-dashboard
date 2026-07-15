@@ -26,7 +26,6 @@ export const useBlogStore = defineStore('blog', () => {
   }
 
   async function fetchMyBlogs() {
-    if (members.value.length > 0) return;
     isLoading.value = true;
     err.value = null;
 
@@ -40,20 +39,23 @@ export const useBlogStore = defineStore('blog', () => {
       );
       members.value = resp.map(mapBlogMember);
     } catch {
+      members.value = [];
       err.value = '블로그 목록을 불러오는데 실패했습니다.';
     } finally {
       isLoading.value = false;
     }
   }
 
-  async function updateBlogDescription(blogId: string, description: string): Promise<void> {
+  async function updateBlogDescription(blogId: string, description: string): Promise<boolean> {
     err.value = null;
     try {
       await directus.request(updateItem(BLOGS_COLLECTION, blogId, { description }));
       const member = members.value.find((m) => m.blog.id === blogId);
       if (member) member.blog.description = description;
+      return true;
     } catch {
       err.value = '블로그 설명 수정에 실패했습니다.';
+      return false;
     }
   }
 

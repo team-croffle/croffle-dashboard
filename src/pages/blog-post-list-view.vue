@@ -1,13 +1,14 @@
 <script setup lang="ts">
   import { storeToRefs } from 'pinia';
-  import { computed, onMounted } from 'vue';
-  import { useRoute } from 'vue-router';
+  import { computed, watch } from 'vue';
+  import { useRoute, useRouter } from 'vue-router';
 
   import { useBlogStore } from '@/features/blog/stores/blog.store';
   import { usePostStore } from '@/features/blog/stores/post.store';
   import type { PostStatus, PostVisibility } from '@/features/blog/types/post.types';
 
   const route = useRoute();
+  const router = useRouter();
   const blogSlug = computed(() => route.params.blogSlug as string);
 
   const blogStore = useBlogStore();
@@ -19,11 +20,17 @@
 
   const currentBlog = computed(() => getBlogBySlug(blogSlug.value));
 
-  onMounted(async () => {
-    if (currentBlog.value) {
-      await fetchPosts(currentBlog.value.id);
-    }
-  });
+  watch(
+    blogSlug,
+    async () => {
+      if (currentBlog.value) {
+        await fetchPosts(currentBlog.value.id);
+      } else {
+        router.replace({ name: 'blog-home' });
+      }
+    },
+    { immediate: true },
+  );
 
   const statusConfig: Record<
     PostStatus,

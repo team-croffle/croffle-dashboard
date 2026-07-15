@@ -87,6 +87,11 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresBlogMembership && to.params.blogSlug) {
     const blogStore = useBlogStore();
     await blogStore.fetchMyBlogs();
+
+    if (blogStore.err) {
+      return { name: 'error', params: { statusCode: '500' } };
+    }
+
     if (!blogStore.getBlogBySlug(to.params.blogSlug as string)) {
       return { name: 'error', params: { statusCode: '403' } };
     }

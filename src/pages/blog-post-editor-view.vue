@@ -13,7 +13,7 @@
   import 'md-editor-v3/lib/style.css';
   import { storeToRefs } from 'pinia';
   import { Markdown } from 'tiptap-markdown';
-  import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+  import { computed, onBeforeUnmount, ref, watch } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
 
   import { useBlogStore } from '@/features/blog/stores/blog.store';
@@ -35,8 +35,13 @@
   const colorMode = useColorMode();
 
   const blogSlug = computed(() => route.params.blogSlug as string);
-  const postIdx = computed(() => Number(route.params.postIdx) as number | undefined);
-  const isEditMode = computed(() => !!postIdx.value);
+  const postIdx = computed(() => {
+    const raw = route.params.postIdx;
+    if (raw === undefined) return undefined;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : undefined;
+  });
+  const isEditMode = computed(() => route.name === 'blog-post-edit');
 
   const blogStore = useBlogStore();
   const { getBlogBySlug } = blogStore;
@@ -108,10 +113,43 @@
     editor.value?.destroy();
   });
 
-  // --- Load data on mount ---
-  onMounted(async () => {
-    if (!currentBlog.value) return;
+  function resetForm() {
+    title.value = '';
+    content.value = '';
+    currentStatus.value = 'draft';
+    status.value = 'draft';
+    visibility.value = 'public';
+    passwordHash.value = '';
+    thumbnailId.value = null;
+    thumbnailPreview.value = null;
+    selectedCategories.value = [];
+    selectedTags.value = [];
+    selectedSeriesId.value = null;
+    newTagName.value = '';
+    newSeriesName.value = '';
+    postStore.clearCurrentPost();
+    editor.value?.commands.setContent('');
+  }
+
+  async function loadEditor() {
+    if (!currentBlog.value) {
+      router.replace({ name: 'blog-home' });
+      return;
+    }
+
     const blogId = currentBlog.value.id;
+
+    // 새 글 저장 직후 edit URL로 replace된 경우, 이미 로드된 글이면 재fetch 생략
+    if (
+      isEditMode.value &&
+      postIdx.value !== undefined &&
+      currentPost.value?.postIdx === postIdx.value &&
+      currentPost.value.blogId === blogId
+    ) {
+      return;
+    }
+
+    resetForm();
 
     await Promise.all([
       categoryStore.fetchCategories(blogId),
@@ -119,24 +157,35 @@
       seriesStore.fetchSeries(blogId),
     ]);
 
-    if (isEditMode.value && postIdx.value) {
+    if (isEditMode.value && postIdx.value !== undefined) {
       await postStore.fetchPost(blogId, postIdx.value);
-      if (currentPost.value) {
-        const p = currentPost.value;
-        title.value = p.title;
-        content.value = p.content;
-        currentStatus.value = p.status;
-        status.value = p.status;
-        visibility.value = p.visibility;
-        thumbnailId.value = p.thumbnail;
-        thumbnailPreview.value = p.thumbnail ? `${DIRECTUS_URL}/assets/${p.thumbnail}` : null;
-        selectedCategories.value = p.categories.map((c) => c.id);
-        selectedTags.value = [...p.tags];
-        selectedSeriesId.value = p.series[0]?.id ?? null;
-        editor.value?.commands.setContent(p.content);
+      if (!currentPost.value) {
+        router.replace({ name: 'blog-posts', params: { blogSlug: blogSlug.value } });
+        return;
       }
+
+      const p = currentPost.value;
+      title.value = p.title;
+      content.value = p.content;
+      currentStatus.value = p.status;
+      status.value = p.status;
+      visibility.value = p.visibility;
+      thumbnailId.value = p.thumbnail;
+      thumbnailPreview.value = p.thumbnail ? `${DIRECTUS_URL}/assets/${p.thumbnail}` : null;
+      selectedCategories.value = p.categories.map((c) => c.id);
+      selectedTags.value = [...p.tags];
+      selectedSeriesId.value = p.series[0]?.id ?? null;
+      editor.value?.commands.setContent(p.content);
     }
-  });
+  }
+
+  watch(
+    [blogSlug, postIdx, () => route.name],
+    () => {
+      void loadEditor();
+    },
+    { immediate: true },
+  );
 
   // --- Thumbnail ---
   async function handleThumbnailChange(e: Event) {
@@ -195,14 +244,15 @@
   }
 
   // --- Save ---
-  function buildPayload(overrideStatus?: PostStatus): PostSaveRequest {
+  function buildPayload(overrideStatus?: PostStatus): Partial<PostSaveRequest> {
+    const p = currentPost.value;
     return {
-      title: title.value,
-      content: content.value,
+      title: title.value === '' ? p?.title : title.value,
+      content: content.value === '' ? p?.content : content.value,
       status: overrideStatus ?? status.value,
       visibility: visibility.value,
-      thumbnail: thumbnailId.value,
-      passwordHash: visibility.value === 'protected' ? passwordHash.value : null,
+      thumbnail: thumbnailId.value === null ? p?.thumbnail : thumbnailId.value,
+      // passwordHash: visibility.value === 'protected' ? passwordHash.value : null, // TODO: 비밀번호 해시 기능은 개발 중
       categories: selectedCategories.value.map((id) => ({ categories_id: id })),
       tags: selectedTags.value.map((t) => ({ tags_id: t.id })),
       series: selectedSeries.value ? [{ series_id: selectedSeries.value.id }] : [],
@@ -211,12 +261,17 @@
 
   async function save(overrideStatus?: PostStatus) {
     if (!title.value.trim() || !currentBlog.value) return;
+
+    if (isEditMode.value && !currentPost.value) return;
+
     const payload = buildPayload(overrideStatus);
 
-    if (isEditMode.value && currentPost.value) {
+    if (currentPost.value) {
       await postStore.updatePost(currentPost.value.id, payload);
-      currentStatus.value = payload.status;
-      status.value = payload.status;
+      if (payload.status) {
+        currentStatus.value = payload.status;
+        status.value = payload.status;
+      }
     } else {
       const created = await postStore.createPost(currentBlog.value.id, payload);
       if (created) {
