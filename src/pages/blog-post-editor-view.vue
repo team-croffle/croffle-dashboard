@@ -123,7 +123,11 @@
     if (isEditMode.value && postIdx.value !== undefined) {
       await postStore.fetchPost(blogId, postIdx.value);
       if (!currentPost.value) {
-        router.replace({ name: 'blog-posts', params: { blogSlug: blogSlug.value } });
+        router.replace({
+          name: 'blog-manage',
+          params: { blogSlug: blogSlug.value },
+          query: { section: 'posts' },
+        });
         return;
       }
 
@@ -361,7 +365,7 @@
           color="neutral"
           size="lg"
           icon="i-lucide-chevron-left"
-          :to="{ name: 'blog-posts', params: { blogSlug } }"
+          :to="{ name: 'blog-manage', params: { blogSlug }, query: { section: 'posts' } }"
         />
         <input
           v-model="title"

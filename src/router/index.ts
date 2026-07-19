@@ -32,10 +32,26 @@ const router = createRouter({
       meta: { requiresAuth: true, layout: 'default' },
     },
     {
-      path: '/blog/:blogSlug',
-      name: 'blog-posts',
-      component: () => import('@/pages/blog-post-list-view.vue'),
+      path: '/blog/:blogSlug/manage',
+      name: 'blog-manage',
+      component: () => import('@/pages/blog-manage-view.vue'),
       meta: { requiresAuth: true, layout: 'default', requiresBlogMembership: true },
+    },
+    {
+      path: '/blog/:blogSlug',
+      redirect: (to) => ({
+        name: 'blog-manage',
+        params: { blogSlug: to.params.blogSlug },
+        query: { section: 'posts' },
+      }),
+    },
+    {
+      path: '/blog/:blogSlug/categories',
+      redirect: (to) => ({
+        name: 'blog-manage',
+        params: { blogSlug: to.params.blogSlug },
+        query: { section: 'categories' },
+      }),
     },
     {
       path: '/blog/:blogSlug/posts/new',
@@ -47,12 +63,6 @@ const router = createRouter({
       path: '/blog/:blogSlug/posts/:postIdx/edit',
       name: 'blog-post-edit',
       component: () => import('@/pages/blog-post-editor-view.vue'),
-      meta: { requiresAuth: true, layout: 'default', requiresBlogMembership: true },
-    },
-    {
-      path: '/blog/:blogSlug/categories',
-      name: 'blog-categories',
-      component: () => import('@/pages/blog-category-view.vue'),
       meta: { requiresAuth: true, layout: 'default', requiresBlogMembership: true },
     },
     {
