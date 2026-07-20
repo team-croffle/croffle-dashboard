@@ -8,7 +8,7 @@
   } from 'md-editor-v3';
   import 'md-editor-v3/lib/style.css';
   import { storeToRefs } from 'pinia';
-  import { computed, ref, watch } from 'vue';
+  import { computed, reactive, ref, watch } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
 
   import ThumbnailLibraryModal from '@/features/blog/components/thumbnail-library-modal.vue';
@@ -75,6 +75,19 @@
   const newSeriesName = ref('');
   const isCreatingTag = ref(false);
   const isCreatingSeries = ref(false);
+
+  const formState = reactive({
+    title,
+    content,
+    status,
+    visibility,
+    passwordHash,
+    selectedCategories,
+    selectedTags,
+    selectedSeriesId,
+    newTagName,
+    newSeriesName,
+  });
 
   const DIRECTUS_URL = import.meta.env.VITE_DIRECTUS_URL as string;
 
@@ -352,6 +365,12 @@
     showLibrary.value = true;
   }
 
+  const thumbnailFileRef = ref<{ inputRef?: HTMLInputElement | null } | null>(null);
+
+  function clickThumbnailInput() {
+    thumbnailFileRef.value?.inputRef?.click();
+  }
+
   const flatCategories = computed(() => flattenCategories(categoryStore.categoryTree));
 
   const mdEditorRef = ref<ExposeParam>();
@@ -368,7 +387,13 @@
 </script>
 
 <template>
-  <div class="flex h-[calc(100vh-64px)] flex-col">
+  <UForm
+    :state="formState"
+    class="relative flex h-[calc(100vh-64px)] flex-col"
+    :validate-on="[]"
+    :loading-auto="false"
+    @submit.prevent
+  >
     <!-- Top bar -->
     <div class="bg-default border-default border-b px-4 py-2">
       <div class="flex items-center gap-3">
@@ -379,12 +404,19 @@
           icon="i-lucide-chevron-left"
           :to="{ name: 'blog-manage', params: { blogSlug }, query: { section: 'posts' } }"
         />
-        <input
-          v-model="title"
-          type="text"
-          placeholder="제목을 입력하세요"
-          class="placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent text-2xl font-semibold outline-none"
-        />
+        <UFormField name="title" class="min-w-0 flex-1" :ui="{ container: 'w-full' }">
+          <UInput
+            v-model="title"
+            type="text"
+            placeholder="제목을 입력하세요"
+            size="xl"
+            variant="ghost"
+            class="w-full"
+            :ui="{
+              base: 'text-2xl font-semibold px-0',
+            }"
+          />
+        </UFormField>
         <div class="flex shrink-0 items-center gap-2">
           <UAlert
             v-if="postErr"
@@ -421,12 +453,12 @@
     <!-- Main area -->
     <div class="flex min-h-0 flex-1">
       <!-- Editor area -->
-      <div class="flex min-w-0 flex-1 flex-col">
+      <div class="flex min-h-0 min-w-0 flex-1 flex-col">
         <MdEditor
           ref="mdEditorRef"
           v-model="content"
           :theme="colorMode === 'dark' ? 'dark' : 'light'"
-          class="flex-1"
+          class="min-h-0 flex-1"
           language="ko-KR"
           :toolbars="[
             'bold',
@@ -483,9 +515,13 @@
 
       <!-- Sidebar -->
       <aside class="border-default bg-default w-80 shrink-0 space-y-5 overflow-y-auto border-l p-4">
-        <!-- Status -->
-        <div class="flex items-center gap-2">
-          <label class="text-base font-medium tracking-wide opacity-60">상태</label>
+        <UFormField
+          label="상태"
+          name="status"
+          orientation="horizontal"
+          class="text-base"
+          :ui="{ label: 'text-base font-medium tracking-wide opacity-60' }"
+        >
           <USelect
             v-model="status"
             :items="[
@@ -497,14 +533,15 @@
             label-key="label"
             size="md"
           />
-        </div>
+        </UFormField>
 
-        <!-- Visibility -->
-        <div class="flex flex-col gap-2">
-          <div class="flex items-center gap-2">
-            <label class="text-base font-medium tracking-wide opacity-60">
-              {{ '공개 범위' }}
-            </label>
+        <UFormField
+          label="공개 범위"
+          name="visibility"
+          class="text-base"
+          :ui="{ label: 'text-base font-medium tracking-wide opacity-60' }"
+        >
+          <div class="flex flex-col gap-2">
             <USelect
               v-model="visibility"
               :items="[
@@ -516,21 +553,32 @@
               label-key="label"
               size="md"
             />
+            <UInput
+              v-if="visibility === 'protected'"
+              v-model="passwordHash"
+              type="password"
+              placeholder="비밀번호 입력"
+              size="md"
+            />
           </div>
-          <UInput
-            v-if="visibility === 'protected'"
-            v-model="passwordHash"
-            type="password"
-            placeholder="비밀번호 입력"
-            size="md"
-          />
-        </div>
+        </UFormField>
 
-        <!-- Thumbnail -->
-        <div class="flex flex-col gap-2">
-          <label for="thumbnail-input" class="text-base font-medium tracking-wide opacity-60">
-            {{ '썸네일' }}
-          </label>
+        <UFormField
+          label="썸네일"
+          name="thumbnail"
+          class="text-base"
+          :ui="{ label: 'text-base font-medium tracking-wide opacity-60' }"
+        >
+          <UInput
+            ref="thumbnailFileRef"
+            type="file"
+            accept="image/*"
+            class="sr-only"
+            tabindex="-1"
+            :disabled="isUploading"
+            :ui="{ base: 'sr-only' }"
+            @change="handleThumbnailChange"
+          />
           <div
             v-if="thumbnailPreview"
             class="border-default relative aspect-video w-full overflow-hidden rounded-md border"
@@ -549,24 +597,16 @@
             v-else
             class="border-default flex aspect-video w-full items-center justify-center gap-4 rounded-md border border-dashed"
           >
-            <label
-              class="hover:bg-accent/30 text-muted hover:text-foreground flex size-12 cursor-pointer items-center justify-center rounded-md transition-colors"
-              :class="isUploading ? 'pointer-events-none opacity-50' : ''"
-              :title="isUploading ? '업로드 중...' : '이미지 업로드'"
-            >
-              <UIcon
-                :name="isUploading ? 'i-lucide-loader-circle' : 'i-lucide-upload'"
-                class="size-6"
-                :class="isUploading ? 'animate-spin' : ''"
-              />
-              <input
-                type="file"
-                accept="image/*"
-                class="sr-only"
-                :disabled="isUploading"
-                @change="handleThumbnailChange"
-              />
-            </label>
+            <UButton
+              color="neutral"
+              variant="ghost"
+              :icon="isUploading ? 'i-lucide-loader-circle' : 'i-lucide-upload'"
+              class="size-12 justify-center"
+              :ui="{ leadingIcon: 'size-6' }"
+              :loading="isUploading"
+              title="이미지 업로드"
+              @click="clickThumbnailInput"
+            />
             <UButton
               color="neutral"
               variant="ghost"
@@ -583,97 +623,113 @@
             :selected-id="thumbnailId"
             @select="selectLibraryThumbnail"
           />
-        </div>
+        </UFormField>
 
-        <!-- Categories -->
-        <div class="flex flex-col gap-2">
-          <label class="text-base font-medium tracking-wide opacity-60">카테고리</label>
+        <UFormField
+          label="카테고리"
+          name="categories"
+          class="text-base"
+          :ui="{ label: 'text-base font-medium tracking-wide opacity-60' }"
+        >
           <div class="border-default max-h-48 space-y-1 overflow-y-auto rounded-md border p-2">
-            <label
+            <UCheckbox
               v-for="cat in flatCategories"
               :key="cat.id"
-              class="hover:bg-accent/30 flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm"
+              :model-value="selectedCategories.includes(cat.id)"
+              size="md"
+              class="hover:bg-accent/30 w-full rounded px-1 py-0.5"
               :style="{ paddingLeft: `${cat.depth * 12 + 4}px` }"
+              @update:model-value="handleSelectCategory(cat.id)"
             >
-              <UCheckbox
-                :model-value="selectedCategories.includes(cat.id)"
-                size="md"
-                @update:model-value="handleSelectCategory(cat.id)"
-              />
-              <UIcon v-if="cat.icon" :name="cat.icon" class="size-4 shrink-0" />
-              <span class="truncate text-sm">{{ cat.name }}</span>
-            </label>
+              <template #label>
+                <span class="flex items-center gap-2 truncate">
+                  <UIcon v-if="cat.icon" :name="cat.icon" class="size-4 shrink-0" />
+                  <span class="truncate text-sm">{{ cat.name }}</span>
+                </span>
+              </template>
+            </UCheckbox>
             <p v-if="flatCategories.length === 0" class="text-muted py-2 text-center text-sm">
               카테고리 없음
             </p>
           </div>
-        </div>
+        </UFormField>
 
-        <!-- Tags -->
-        <div class="flex flex-col gap-2">
-          <label class="text-base font-medium tracking-wide opacity-60">태그</label>
-          <div class="flex flex-wrap gap-2">
-            <UBadge
-              v-for="tag in tags"
-              :key="tag.id"
-              :variant="isTagSelected(tag.id) ? 'solid' : 'outline'"
-              color="neutral"
-              size="md"
-              class="cursor-pointer select-none"
-              @click="toggleTag(tag)"
-            >
-              {{ tag.name }}
-            </UBadge>
-            <p v-if="tags.length === 0" class="text-muted text-sm">태그 없음</p>
+        <UFormField
+          label="태그"
+          name="tags"
+          class="text-base"
+          :ui="{ label: 'text-base font-medium tracking-wide opacity-60' }"
+        >
+          <div class="space-y-2">
+            <div class="flex flex-wrap gap-2">
+              <UBadge
+                v-for="tag in tags"
+                :key="tag.id"
+                :variant="isTagSelected(tag.id) ? 'solid' : 'outline'"
+                color="neutral"
+                size="md"
+                class="cursor-pointer select-none"
+                @click="toggleTag(tag)"
+              >
+                {{ tag.name }}
+              </UBadge>
+              <p v-if="tags.length === 0" class="text-muted text-sm">태그 없음</p>
+            </div>
+            <div class="flex gap-1">
+              <UInput
+                v-model="newTagName"
+                size="md"
+                placeholder="새 태그 이름"
+                class="flex-1"
+                @keydown.enter="createAndAddTag"
+              />
+              <UButton
+                size="md"
+                variant="outline"
+                color="neutral"
+                icon="i-lucide-plus"
+                :loading="isCreatingTag"
+                @click="createAndAddTag"
+              />
+            </div>
           </div>
-          <div class="flex gap-1">
-            <UInput
-              v-model="newTagName"
-              size="md"
-              placeholder="새 태그 이름"
-              class="flex-1"
-              @keydown.enter="createAndAddTag"
-            />
-            <UButton
-              size="md"
-              variant="outline"
-              color="neutral"
-              icon="i-lucide-plus"
-              :loading="isCreatingTag"
-              @click="createAndAddTag"
-            />
-          </div>
-        </div>
+        </UFormField>
 
-        <!-- Series -->
-        <div class="flex flex-col gap-2">
-          <label class="text-base font-medium tracking-wide opacity-60">시리즈</label>
-          <USelect
-            v-model="selectedSeriesId"
-            :items="[{ id: null, name: '없음' }, ...seriesList]"
-            value-key="id"
-            label-key="name"
-            size="md"
-          />
-          <div class="flex gap-1">
-            <UInput
-              v-model="newSeriesName"
+        <UFormField
+          label="시리즈"
+          name="series"
+          class="text-base"
+          :ui="{ label: 'text-base font-medium tracking-wide opacity-60' }"
+        >
+          <div class="space-y-2">
+            <USelect
+              v-model="selectedSeriesId"
+              :items="[{ id: null, name: '없음' }, ...seriesList]"
+              value-key="id"
+              label-key="name"
               size="md"
-              placeholder="새 시리즈 이름"
-              class="flex-1"
-              @keydown.enter="createAndSelectSeries"
+              class="w-full"
             />
-            <UButton
-              size="md"
-              variant="outline"
-              color="neutral"
-              icon="i-lucide-plus"
-              :loading="isCreatingSeries"
-              @click="createAndSelectSeries"
-            />
+            <div class="flex gap-1">
+              <UInput
+                v-model="newSeriesName"
+                size="md"
+                placeholder="새 시리즈 이름"
+                class="flex-1"
+                @keydown.enter="createAndSelectSeries"
+              />
+              <UButton
+                size="md"
+                variant="outline"
+                color="neutral"
+                icon="i-lucide-plus"
+                :loading="isCreatingSeries"
+                @click="createAndSelectSeries"
+              />
+            </div>
           </div>
-        </div>
+        </UFormField>
       </aside>
     </div>
-  </div>
+  </UForm>
 </template>
