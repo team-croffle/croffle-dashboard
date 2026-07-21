@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { useColorMode } from '@vueuse/core';
+  import { useColorMode, watchDebounced } from '@vueuse/core';
   import {
     DropdownToolbar,
     MdEditor,
@@ -25,7 +25,6 @@
   } from '@/features/blog/types/post.types';
   import type { Series } from '@/features/blog/types/series.types';
   import type { Tag } from '@/features/blog/types/tag.types';
-  import { toTagSlug } from '@/features/blog/utils/slug';
 
   type TagItem = Tag & { label: string };
 
@@ -65,7 +64,7 @@
   const categoryStore = useCategoryStore();
 
   const tagStore = useTagStore();
-  const { tags } = storeToRefs(tagStore);
+  const { tags, isSearching } = storeToRefs(tagStore);
 
   const seriesStore = useSeriesStore();
   const { seriesList } = storeToRefs(seriesStore);
@@ -91,7 +90,17 @@
   const isCreatingTag = ref(false);
   const isCreatingSeries = ref(false);
 
-  const tagItems = computed(() => tags.value.map(toTagItem));
+  // 검색 결과 + 이미 선택된 태그를 합쳐 드롭다운에 노출한다(선택 표시 유지).
+  const tagItems = computed(() => {
+    const map = new Map<string, TagItem>();
+    for (const tag of tags.value) map.set(tag.id, toTagItem(tag));
+    for (const tag of selectedTags.value) {
+      if (!map.has(tag.id)) map.set(tag.id, toTagItem(tag));
+    }
+    return [...map.values()];
+  });
+
+  const tagSearch = ref('');
 
   const selectedTagItems = computed({
     get: (): TagItem[] => selectedTags.value.map(toTagItem),
@@ -158,7 +167,7 @@
 
     await Promise.all([
       categoryStore.fetchCategories(blogId),
-      tagStore.fetchTags(blogId),
+      tagStore.searchTags(blogId, ''),
       seriesStore.fetchSeries(blogId),
     ]);
 
@@ -228,8 +237,17 @@
   }
 
   // --- Tags ---
-  function findTagBySlug(slug: string): Tag | undefined {
-    return tags.value.find((t) => t.slug === slug);
+  watchDebounced(
+    tagSearch,
+    (keyword) => {
+      if (!currentBlog.value) return;
+      void tagStore.searchTags(currentBlog.value.id, keyword);
+    },
+    { debounce: 500 },
+  );
+
+  function findTagByName(name: string): Tag | undefined {
+    return tags.value.find((tag) => tag.name === name);
   }
 
   function addTagIfMissing(tag: Tag) {
@@ -240,25 +258,24 @@
 
   async function applyTagByName(rawName: string) {
     const name = rawName.trim();
-    if (!name || !currentBlog.value) return;
+    if (!name || !currentBlog.value || isCreatingTag.value) return;
 
-    const slug = toTagSlug(name);
-    if (!slug) return;
-
-    const existing = findTagBySlug(slug);
+    const existing = findTagByName(name);
     if (existing) {
       addTagIfMissing(existing);
       return;
     }
 
     isCreatingTag.value = true;
-    const created = await tagStore.createTag({
-      blogId: currentBlog.value.id,
-      name,
-      slug,
-    });
-    if (created) addTagIfMissing(created);
-    isCreatingTag.value = false;
+    try {
+      const created = await tagStore.createTag({
+        blogId: currentBlog.value.id,
+        name,
+      });
+      if (created) addTagIfMissing(created);
+    } finally {
+      isCreatingTag.value = false;
+    }
   }
 
   async function handleCreateTag(name: string) {
@@ -675,16 +692,18 @@
             :key="tagMenuKey"
             ref="tagMenuRef"
             v-model="selectedTagItems"
+            v-model:search-term="tagSearch"
             :items="tagItems"
             multiple
             by="id"
             create-item
             open-on-focus
             :filter-fields="['label', 'slug', 'name']"
+            leading-icon="i-lucide-search"
             placeholder="태그 검색 또는 추가"
             size="md"
             class="w-full"
-            :loading="isCreatingTag"
+            :loading="isCreatingTag || isSearching"
             :ui="{
               tagsItem: 'max-w-[9rem] min-w-0',
               tagsItemText: 'truncate min-w-0',
